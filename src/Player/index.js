@@ -10,15 +10,8 @@ export const Player = () => {
     const [ isPlaying, setPlaying ] = useState(false);
     const [ progress, setProgress ] = useState(0);
     const [ isProgressCapturing, setProgressCapturing ] = useState(0);
-
-    /**
-     * Создаём реф для элемента video.
-     * Реф в React — это прямой доступ к html-элементу.
-     * С его помощью мы сможем управлять видеоплеером в явном виде.
-     */
     const videoRef = useRef(null);
 
-    /* Включаем или выключаем проигрывание видео. */
     const togglePlay = () => {
         const method = videoRef.current.paused ? 'play' : 'pause';
 
@@ -26,31 +19,31 @@ export const Player = () => {
         setPlaying(method === 'play');
     };
 
-    /* Прокручиваем прогресс проигрывания. */
+    const toggleFullscreen = () => {
+        if (videoRef.current.requestFullscreen) {
+            videoRef.current.requestFullscreen();
+        }
+    };
+
     const skip = (event) => {
-        /* Забираем время прокрутки из дата-атрибута JSX-элемента. */
         const seconds = event.target.dataset.skip;
 
         videoRef.current.currentTime += Number.parseFloat(seconds);
     };
 
-    /* Устанавливаем прогресс проигранного видео в процентах. */
     const handleProgress = () => {
-        const progress
-            = videoRef.current.currentTime / videoRef.current.duration * 100;
+        const progress = videoRef.current.currentTime / videoRef.current.duration * 100;
 
         setProgress(progress);
     };
 
-    /* Устанавливаем прогресс видео указателем мыши. */
+    const handleSlidersChange = (event) => {
+        const { name, value } = event.target;
+
+        videoRef.current[ name ] = Number.parseFloat(value);
+    };
+
     const scrub = (event) => {
-        /**
-         * offsetX — свойство события мыши. Возвращает расстояние от «начала» элемента до позиции указателя мыши по координате X.
-         * nativeEvent — ссылка на нативное, НЕ кросс-браузерное событие.
-         *
-         * offsetWidth — возвращает ширину элемента.
-         * О разнице между event.target и event.currentTarget: https://github.com/facebook/react/issues/5733#issuecomment-167188516.
-         */
         const scrubTime
             = event.nativeEvent.offsetX / event.currentTarget.offsetWidth
             * videoRef.current.duration;
@@ -60,21 +53,16 @@ export const Player = () => {
 
     const playControl = isPlaying ? <>&#10074;&#10074;</> : <>&#9654;</>;
 
-    /* Добавляем слушатель вкл/выкл видео по нажатию на пробел. */
     useEffect(() => {
-        // componentDidMount + componentWillUnmount
         const handleKeydown = (event) => {
             if (event.code === 'Space') {
                 togglePlay();
             }
         };
 
-        /* Подписка, выполняется при первом рендере один раз. */
         document.addEventListener('keydown', handleKeydown);
 
-        /* Отписка, выполняется при удалении компонента один раз. */
         return () => document.removeEventListener('keydown', handleKeydown);
-        /* Эффект выполняется один раз, потому что вторым аргументом мы передали []. */
     }, []);
 
     return (
@@ -111,6 +99,7 @@ export const Player = () => {
                     name = 'volume'
                     step = '0.05'
                     type = 'range'
+                    onChange = { handleSlidersChange }
                 />
                 <input
                     className = 'slider'
@@ -119,6 +108,7 @@ export const Player = () => {
                     name = 'playbackRate'
                     step = '0.1'
                     type = 'range'
+                    onChange = { handleSlidersChange }
                 />
                 <button
                     data-skip = '-10'
@@ -130,7 +120,7 @@ export const Player = () => {
                     onClick = { skip }>
                     25s »
                 </button>
-                <button>&#10021;</button>
+                <button onClick = { toggleFullscreen }>&#10021;</button>
             </div>
         </div>
     );
